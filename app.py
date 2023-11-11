@@ -16,6 +16,9 @@ import mysql.connector
 from flask_session import Session
 from flask_dropzone import Dropzone
 
+# Import Markup from old Flask location
+from flask.globals import Markup  
+
 # Update this line in your code
 db_url = os.getenv("JAWSDB_URL", "mysql://root:@localhost/skillsync_db")
 
