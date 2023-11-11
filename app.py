@@ -32,7 +32,7 @@ def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
     try:
         # Use the database URL from the configuration
-        connection = mysql.connector.connect(host=db_config["host"], charset='utf8mb4', cursorclass=mysql.cursors.DictCursor)
+        connection = mysql.connector.connect(host=db_config["host"], charset='utf8mb4', cursorclass=mysql.connector.cursors.DictCursor)
         cursor = connection.cursor()
 
         # Query to fetch data
@@ -48,10 +48,11 @@ def get_job_postings_from_db():
         print(f"Error: {err}")
         return None
     finally:
-        # Close the cursor and connection
         # Close the cursor and connection, if they exist
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection:  
+            connection.close()
 
 # Replace the CSV reading code with the database fetching code
 data_df = get_job_postings_from_db()
