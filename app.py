@@ -17,23 +17,26 @@ from mysql.connector.cursor import MySQLCursorDict
 from flask_session import Session
 from flask_dropzone import Dropzone
 
-# Update this line in your code
-db_url = os.getenv("JAWSDB_URL", "mysql://root:@localhost/skillsync_db")
+# Get the heroku db url 
+db_url = os.getenv("JAWSDB_URL")
 
-# Database configuration
+# Parse the url to get config details
+url_parts = db_url.split("@")
+creds, host = url_parts[0], url_parts[1]
+
+# Update config to use JAWSDB_URL 
 db_config = {
-    "url": db_url,
-    "host": "localhost",
-    "user": "root",
-    "password": "",
-    "database": "skillsync_db"
+  "host": host,
+  "user": creds.split(":")[0], 
+  "password": creds.split(":")[1],
+  "database": host.split("/")[3]
 }
 
 def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
     try:
         # Use the database URL from the configuration
-        connection = mysql.connector.connect(host=db_config["host"], charset='utf8mb4')
+        connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
         # Query to fetch data
