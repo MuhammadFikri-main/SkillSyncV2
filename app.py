@@ -16,8 +16,12 @@ import mysql.connector
 from flask_session import Session
 from flask_dropzone import Dropzone
 
+# Update this line in your code
+db_url = os.getenv("JAWSDB_URL", "mysql://root:@localhost/skillsync_db")
+
 # Database configuration
 db_config = {
+    "url": db_url,
     "host": "localhost",
     "user": "root",
     "password": "",
@@ -27,11 +31,9 @@ db_config = {
 def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
     try:
-        # Create a connection to the database
-        connection = mysql.connector.connect(**db_config)
-        
-        # Create a cursor object to interact with MySQL
-        cursor = connection.cursor(dictionary=True)  # Using dictionary=True to get column names
+        # Use the database URL from the configuration
+        connection = mysql.connector.connect(host=db_config["url"], charset='utf8mb4', cursorclass=mysql.cursors.DictCursor)
+        cursor = connection.cursor()
         
         # Query to fetch data
         query = "SELECT * FROM job_data"
