@@ -33,8 +33,10 @@ db_config = {
     "database": host.split("/")[3] if len(host.split("/")) > 3 else "default_database_name",
 }
 
-# Print the host variable
-print("Host value:", host)
+# Print values for debugging
+print("URL Parts:", url_parts)
+print("Credentials:", creds)
+print("Host:", host)
 
 def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
