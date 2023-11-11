@@ -17,19 +17,19 @@ from mysql.connector.cursor import MySQLCursorDict
 from flask_session import Session
 from flask_dropzone import Dropzone
 
-# Get the heroku db url 
+# Get the Heroku database URL
 db_url = os.getenv("JAWSDB_URL")
 
-# Parse the url to get config details
+# Parse the URL to get configuration details
 url_parts = db_url.split("@")
 creds, host = url_parts[0], url_parts[1]
 
-# Update config to use JAWSDB_URL 
+# Update config to use JAWSDB_URL
 db_config = {
-  "host": host,
-  "user": creds.split(":")[0], 
-  "password": creds.split(":")[1],
-  "database": host.split("/")[3]
+    "host": host,
+    "user": creds.split(":")[0],
+    "password": creds.split(":")[1],
+    "database": host.split("/")[3],
 }
 
 def get_job_postings_from_db():
