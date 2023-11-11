@@ -18,7 +18,8 @@ from flask_session import Session
 from flask_dropzone import Dropzone
 
 # Get the Heroku database URL
-db_url = os.getenv("JAWSDB_URL")
+# db_url = os.getenv("JAWSDB_URL")
+db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
 
 # Parse the URL to get configuration details
 url_parts = db_url.split("@")
@@ -34,7 +35,6 @@ db_config = {
 
 # Print the host variable
 print("Host value:", host)
-
 
 def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
