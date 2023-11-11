@@ -26,11 +26,15 @@ creds, host = url_parts[0], url_parts[1]
 
 # Update config to use JAWSDB_URL
 db_config = {
-    "host": host,
+    "host": host.split("/")[3] if len(host.split("/")) > 3 else "default_database_name",
     "user": creds.split(":")[0],
     "password": creds.split(":")[1],
-    "database": host.split("/")[3],
+    "database": host.split("/")[3] if len(host.split("/")) > 3 else "default_database_name",
 }
+
+# Print the host variable
+print("Host value:", host)
+
 
 def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
