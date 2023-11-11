@@ -1,9 +1,9 @@
-Flask
+Flask==1.1.4
 gunicorn
 PyPDF2==3.0.1
 pandas==1.5.3
 scikit-learn==1.3.0
 nltk==3.8.1
-mysql-connector-python
+mysql-connector-python==8.0.28
 Flask-Session==0.4.0
-Flask-Dropzone==1.5.4
+flask-dropzone==0.9.5
