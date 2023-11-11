@@ -25,18 +25,26 @@ db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhws
 url_parts = db_url.split("@")
 creds, host = url_parts[0], url_parts[1]
 
-# Update config to use JAWSDB_URL
-db_config = {
-    "host": host.split("/")[3] if len(host.split("/")) > 3 else "default_database_name",
-    "user": creds.split(":")[0],
-    "password": creds.split(":")[1],
-    "database": host.split("/")[3] if len(host.split("/")) > 3 else "default_database_name",
-}
-
 # Print values for debugging
 print("URL Parts:", url_parts)
 print("Credentials:", creds)
 print("Host:", host)
+
+# Split the host further to get the hostname and port
+host_parts = host.split("/")
+hostname_port, database_name = host_parts[0], host_parts[1]
+
+# Split the hostname_port to get the actual hostname and port
+hostname, port = hostname_port.split(":")
+
+# Update config to use JAWSDB_URL
+db_config = {
+    "host": hostname,
+    "port": int(port),
+    "user": creds.split(":")[0],
+    "password": creds.split(":")[1],
+    "database": database_name,
+}
 
 def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
