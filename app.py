@@ -21,30 +21,20 @@ from flask_dropzone import Dropzone
 # db_url = os.getenv("JAWSDB_URL")
 db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
 
-# Parse the URL to get configuration details
-url_parts = db_url.split("@")
-creds, host = url_parts[0], url_parts[1]
-
-# Print values for debugging
-print("URL Parts:", url_parts)
-print("Credentials:", creds)
-print("Host:", host)
-
-# Split the host further to get the hostname and port
-host_parts = host.split("/")
-hostname_port, database_name = host_parts[0], host_parts[1]
-
-# Split the hostname_port to get the actual hostname and port
-hostname, port = hostname_port.split(":")
+# Print db_config for debugging
+print("db_url:", db_url)
 
 # Update config to use JAWSDB_URL
 db_config = {
-    "host": hostname,
-    "port": int(port),
-    "user": creds.split(":")[0],
-    "password": creds.split(":")[1],
-    "database": database_name,
+    'user': db_url.split(':')[1].split('//')[1],
+    'password': db_url.split(':')[2].split('@')[0],
+    'host': db_url.split('@')[1].split(':')[0],
+    'database': db_url.split('/')[3].split('?')[0],
+    'port': db_url.split('@')[1].split(':')[1].split('/')[0],
 }
+
+# Print db_config for debugging
+print("db_config:", db_config)
 
 def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
