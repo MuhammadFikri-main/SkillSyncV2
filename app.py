@@ -15,7 +15,6 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import mysql.connector
 from flask_session import Session
 from flask_dropzone import Dropzone
-from werkzeug.wrappers import Markup
 
 # Update this line in your code
 db_url = os.getenv("JAWSDB_URL", "mysql://root:@localhost/skillsync_db")
