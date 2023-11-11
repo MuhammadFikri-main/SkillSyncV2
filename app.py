@@ -49,10 +49,8 @@ def get_job_postings_from_db():
         return None
     finally:
         # Close the cursor and connection, if they exist
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+        cursor.close()
+        connection.close()
 
 # Replace the CSV reading code with the database fetching code
 data_df = get_job_postings_from_db()
