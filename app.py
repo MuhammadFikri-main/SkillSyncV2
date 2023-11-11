@@ -33,7 +33,7 @@ def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
     try:
         # Use the database URL from the configuration
-        connection = mysql.connector.connect(host=db_config["host"], charset='utf8mb4', cursor_class=DictCursor)
+        connection = mysql.connector.connect(host=db_config["host"], charset='utf8mb4')
         cursor = connection.cursor()
 
         # Query to fetch data
