@@ -13,7 +13,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import mysql.connector
-from mysql.connector import DictCursor
+from mysql.connector.cursor import MySQLCursorDict 
 from flask_session import Session
 from flask_dropzone import Dropzone
 
@@ -33,7 +33,7 @@ def get_job_postings_from_db():
     """Fetch job postings from the MySQL database."""
     try:
         # Use the database URL from the configuration
-        connection = mysql.connector.connect(host=db_config["host"], charset='utf8mb4')
+        connection = mysql.connector.connect(host=db_config["host"], charset='utf8mb4', cursorclass=mysql.cursors.DictCursor)
         cursor = connection.cursor()
 
         # Query to fetch data
