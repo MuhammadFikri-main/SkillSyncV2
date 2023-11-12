@@ -80,7 +80,7 @@ app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'skillsyncv2'  # Replace with a unique prefix
-app.config['SESSION_REDIS'] = redis.StrictRedis.from_url(os.environ.get("REDISCLOUD_URL"))
+app.config['SESSION_REDIS'] = redis.StrictRedis.from_url('redis://default:qb1YLSxluzO5Y6RtPsx6INoN7RiRf6Oy@redis-19538.c267.us-east-1-4.ec2.cloud.redislabs.com:19538')
 
 # Initialize Flask-Session
 Session(app)
