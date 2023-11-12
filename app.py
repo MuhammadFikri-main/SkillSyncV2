@@ -15,7 +15,9 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import mysql.connector
 from mysql.connector.cursor import MySQLCursorDict 
 from flask_session import Session
+from flask_kvsession import KVSessionExtension
 from flask_dropzone import Dropzone
+import redis
 
 # Get the Heroku database URL
 db_url = os.getenv("JAWSDB_URL")
@@ -69,10 +71,22 @@ app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
 # Configure session to use the filesystem
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-app.config["SESSION_FILE_DIR"] = "C:\\Users\\Fikri\\Downloads\\Version 4\\SkillSyncV2\\session"
+# app.config["SESSION_PERMANENT"] = False
+# app.config["SESSION_TYPE"] = "filesystem"
+# app.config["SESSION_FILE_DIR"] = "C:\\Users\\Fikri\\Downloads\\Version 4\\SkillSyncV2\\session"
+
+# Configure Flask app to use Redis for sessions
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_KEY_PREFIX'] = 'skillsyncv2'  # Replace with a unique prefix
+app.config['SESSION_REDIS'] = redis.StrictRedis.from_url(os.environ.get("REDIS_URL"))
+
+# Initialize Flask-Session
 Session(app)
+
+# Initialize Flask-KVSession
+kvsession = KVSessionExtension(app)
 
 @app.route('/')
 def index():
