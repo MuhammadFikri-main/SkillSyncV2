@@ -132,7 +132,7 @@ def is_pdf(filename):
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app.config.update(
-    UPLOADED_PATH=os.path.join(basedir, 'resumes'),
+    # UPLOADED_PATH=os.path.join(basedir, 'resumes'),
     # Flask-Dropzone config:
     DROPZONE_MAX_FILE_SIZE=3,
     DROPZONE_MAX_FILES=30,
@@ -283,10 +283,10 @@ def match():
 
 @app.after_request
 def set_cookie(response):
-  if "session_id" in session: 
-    session_id = str(session["session_id"]).encode("utf-8")
-    response.set_cookie(app.config["SESSION_COOKIE_NAME"], session_id)
-  return response
+    if "session_id" in session: 
+        session_id = str(session["session_id"]).encode("utf-8").decode("utf-8")
+        response.set_cookie(app.config["SESSION_COOKIE_NAME"], session_id)
+    return response
 
 
 if __name__ == '__main__':
