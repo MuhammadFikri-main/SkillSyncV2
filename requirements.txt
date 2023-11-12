@@ -10,3 +10,4 @@ Flask-Dropzone==1.6.0
 Flask-KVSession==0.6.2
 redis==5.0.1
 boto3==1.26.76
+Werkzeug==3.0.1
