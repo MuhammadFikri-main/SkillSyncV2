@@ -147,6 +147,7 @@ def match():
             print("Uploaded file:", file.filename, flush=True)
             # Save the PDF file or perform any other necessary actions
             file.save(os.path.join(app.config['UPLOADED_PATH'], file.filename))
+            print("File saved successfully:", file.filename)
             session['resume_filename'] = file.filename
             return redirect(url_for('match'))
         else:
