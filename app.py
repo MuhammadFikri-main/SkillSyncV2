@@ -91,6 +91,7 @@ app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'skillsyncv2'  # Replace with a unique prefix
 app.config['SESSION_REDIS'] = redis.StrictRedis.from_url('redis://default:qb1YLSxluzO5Y6RtPsx6INoN7RiRf6Oy@redis-19538.c267.us-east-1-4.ec2.cloud.redislabs.com:19538')
+app.config["SESSION_COOKIE_NAME"] = "session"
 
 # Initialize Flask-Session
 Session(app)
@@ -158,22 +159,23 @@ def match():
                 # Upload the file to S3
                 s3.upload_fileobj(file, S3_BUCKET_NAME, file.filename)
                 print("File uploaded successfully to S3:", file.filename)
+
+                # Get just the filename 
+                filename = file.filename  
+
+                # Save filename in session
+                session['resume_filename'] = filename
                 
                 # Store the S3 file URL in the session
                 s3_file_url = f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{file.filename}"
                 session['resume_s3_url'] = s3_file_url
 
                 return redirect(url_for('match'))
+            
             except NoCredentialsError:
                 return 'Credentials not available.'
             except Exception as e:
                 return f'An error occurred: {str(e)}'
-            # print("Uploaded file:", file.filename, flush=True)
-            # # Save the PDF file or perform any other necessary actions
-            # file.save(os.path.join(app.config['UPLOADED_PATH'], file.filename))
-            # print("File saved successfully:", file.filename)
-            # session['resume_filename'] = file.filename
-            # return redirect(url_for('match'))
         else:
             return 'Invalid file format. Please upload a PDF file.'
 
@@ -181,16 +183,30 @@ def match():
         if 'match_btn' in request.args:
             # Match button was clicked
             # Build file path
+
+            # Load session ID from cookie and decode
+            session_id = request.cookies.get(app.config["SESSION_COOKIE_NAME"])
+            if session_id:
+                session["session_id"] = session_id.decode("utf-8")
+
+            # Encode session ID before saving to session
+            if "session_id" in session:
+                session["session_id"] = str(session["session_id"]).encode("utf-8")
+
+            # Get filename from session 
             filename = session.get('resume_filename')
-            file_path = os.path.join(app.config['UPLOADED_PATH'], filename)
+            s3.download_file(S3_BUCKET_NAME, filename, f"/tmp/{filename}")
+
             if filename:
                 print("Processing file:", filename, flush=True)
                 # Extract text from the uploaded resume PDF
-                with open(file_path, 'rb') as pdf_file:
+                with open(f"/tmp/{filename}", 'rb') as pdf_file:
                     pdf_reader = PyPDF2.PdfReader(pdf_file)
                     extracted_text = ''.join(page.extract_text() for page in pdf_reader.pages)
 
-
+                # Delete temp file
+                os.remove(f"/tmp/{filename}") 
+                
                 # Dictionary for skills and tools mapping, in order to have a correct naming
                 keywords_skills = {
                     'airflow': 'Airflow', 'alteryx': 'Alteryx', 'asp.net': 'ASP.NET', 'atlassian': 'Atlassian', 
@@ -275,6 +291,13 @@ def match():
             num_pages = (len(sorted_indices) + per_page - 1) // per_page
 
             return render_template('match.html', items=items, num_pages=num_pages, current_page=page, skills=extracted_skills)
+
+@app.after_request
+def set_cookie(response):
+  if "session_id" in session: 
+    session_id = str(session["session_id"]).encode("utf-8")
+    response.set_cookie(app.config["SESSION_COOKIE_NAME"], session_id)
+  return response
 
 
 if __name__ == '__main__':
