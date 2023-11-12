@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session
 from flask import redirect, url_for
 import os
+import io
 import re
 import ast
 import boto3
@@ -88,10 +89,15 @@ app.secret_key = secrets.token_hex(16)
 # Configure Flask app to use Redis for sessions
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_REFRESH_EACH_REQUEST'] = False
 app.config['SESSION_KEY_PREFIX'] = 'skillsyncv2'  # Replace with a unique prefix
 app.config['SESSION_REDIS'] = redis.StrictRedis.from_url('redis://default:qb1YLSxluzO5Y6RtPsx6INoN7RiRf6Oy@redis-19538.c267.us-east-1-4.ec2.cloud.redislabs.com:19538')
 app.config["SESSION_COOKIE_NAME"] = "session"
+# Expire sessions after 1 hour of inactivity
+app.config['SESSION_REDIS_EXPIRE_AFTER'] = 3600 
+
+# Create Redis client
+redis_client = redis.StrictRedis.from_url('redis://default:qb1YLSxluzO5Y6RtPsx6INoN7RiRf6Oy@redis-19538.c267.us-east-1-4.ec2.cloud.redislabs.com:19538')
 
 # Initialize Flask-Session
 Session(app)
@@ -111,15 +117,39 @@ def data():
 
 @app.route('/debug_session')
 def debug_session():
-    # return jsonify(dict(session))
-    #Add a route to check the session status
-    session_status = {
-        'session_id': session.sid,
-        'session_data': dict(session),
-    }
-    print("Session Data:", session_status)
-    return jsonify(session_status)
+    return jsonify(dict(session))
+    # Add a route to check the session status
+    # session_status = {
+    #     'session_id': session['_id'],
+    #     'session_data': dict(session),
+    # }
+    # print("Session Data:", session_status)
+    # return jsonify(session_status)
 
+@app.route('/test-redis')
+def test_redis():
+    try:
+        redis_client.ping()
+        print("Connected to Redis successfully!")
+    except Exception as e:
+        print("Error connecting to Redis:", e)
+
+    try:
+        redis_client.set('test_key', 'test value')
+        print("Set key in Redis")
+    except Exception as e:
+        print("Error setting Redis key:", e)
+
+    try:
+        value = redis_client.get('test_key')
+        print("Got value from Redis:", value)
+    except Exception as e:
+        print("Error getting Redis key:", e)
+
+    # Delete test key
+    redis_client.delete('test_key')
+
+    return "Testing Redis completed"
 
 @app.route('/insight')
 def insight():
@@ -149,7 +179,6 @@ def match():
     items = []
     num_pages = 0
     extracted_skills = []
-
 
     if request.method == 'POST':
         # Save on upload
@@ -185,76 +214,85 @@ def match():
             
             # Get filename from session 
             filename = session.get('resume_filename')
-            s3.download_file(S3_BUCKET_NAME, filename, f"/tmp/{filename}")
 
             if filename:
                 print("Processing file:", filename, flush=True)
-                # Extract text from the uploaded resume PDF
-                with open(f"/tmp/{filename}", 'rb') as pdf_file:
-                    pdf_reader = PyPDF2.PdfReader(pdf_file)
+
+                # Read the file content from S3
+                try:
+                    response = s3.get_object(Bucket=S3_BUCKET_NAME, Key=str(filename))
+                    file_content = response['Body'].read()
+
+                    # Create a file-like object from the bytes data
+                    file_obj = io.BytesIO(file_content)
+                    
+                    # Extract text from the uploaded resume PDF
+                    pdf_reader = PyPDF2.PdfReader(file_obj)
                     extracted_text = ''.join(page.extract_text() for page in pdf_reader.pages)
 
-                # Delete temp file
-                os.remove(f"/tmp/{filename}") 
+                    print("Extracted text from resume:", extracted_text)
                 
-                # Dictionary for skills and tools mapping, in order to have a correct naming
-                keywords_skills = {
-                    'airflow': 'Airflow', 'alteryx': 'Alteryx', 'asp.net': 'ASP.NET', 'atlassian': 'Atlassian', 
-                    'excel': 'Excel', 'power_bi': 'Power BI', 'tableau': 'Tableau', 'srss': 'SRSS', 'word': 'Word', 
-                    'unix': 'Unix', 'vue': 'Vue', 'jquery': 'jQuery', 'linux/unix': 'Linux / Unix', 'seaborn': 'Seaborn', 
-                    'microstrategy': 'MicroStrategy', 'spss': 'SPSS', 'visio': 'Visio', 'gdpr': 'GDPR', 'ssrs': 'SSRS', 
-                    'spreadsheet': 'Spreadsheet', 'aws': 'AWS', 'hadoop': 'Hadoop', 'ssis': 'SSIS', 'linux': 'Linux', 
-                    'sap': 'SAP', 'powerpoint': 'PowerPoint', 'sharepoint': 'SharePoint', 'redshift': 'Redshift', 
-                    'snowflake': 'Snowflake', 'qlik': 'Qlik', 'cognos': 'Cognos', 'pandas': 'Pandas', 'spark': 'Spark', 'outlook': 'Outlook',
-                    'sql' : 'SQL', 'python' : 'Python', 'r' : 'R', 'c':'C', 'c#':'C#', 'javascript' : 'JavaScript', 'js':'JS', 'java':'Java', 
-                    'scala':'Scala', 'sas' : 'SAS', 'matlab': 'MATLAB', 'c++' : 'C++', 'c/c++' : 'C / C++', 'perl' : 'Perl','go' : 'Go',
-                    'typescript' : 'TypeScript','bash':'Bash','html' : 'HTML','css' : 'CSS','php' : 'PHP','powershell' : 'Powershell',
-                    'rust' : 'Rust', 'kotlin' : 'Kotlin','ruby' : 'Ruby','dart' : 'Dart','assembly' :'Assembly',
-                    'swift' : 'Swift','vba' : 'VBA','lua' : 'Lua','groovy' : 'Groovy','delphi' : 'Delphi','objective-c' : 'Objective-C',
-                    'haskell' : 'Haskell','elixir' : 'Elixir','julia' : 'Julia','clojure': 'Clojure','solidity' : 'Solidity',
-                    'lisp' : 'Lisp','f#':'F#','fortran' : 'Fortran','erlang' : 'Erlang','apl' : 'APL','cobol' : 'COBOL',
-                    'ocaml': 'OCaml','crystal':'Crystal','javascript/typescript' : 'JavaScript / TypeScript','golang':'Golang',
-                    'nosql': 'NoSQL', 'mongodb' : 'MongoDB','t-sql' :'Transact-SQL', 'no-sql' : 'No-SQL','visual_basic' : 'Visual Basic',
-                    'pascal':'Pascal', 'mongo' : 'Mongo', 'pl/sql' : 'PL/SQL','sass' :'Sass', 'vb.net' : 'VB.NET','mssql' : 'MSSQL',
-                }
+                    # Dictionary for skills and tools mapping, in order to have a correct naming
+                    keywords_skills = {
+                        'airflow': 'Airflow', 'alteryx': 'Alteryx', 'asp.net': 'ASP.NET', 'atlassian': 'Atlassian', 
+                        'excel': 'Excel', 'power_bi': 'Power BI', 'tableau': 'Tableau', 'srss': 'SRSS', 'word': 'Word', 
+                        'unix': 'Unix', 'vue': 'Vue', 'jquery': 'jQuery', 'linux/unix': 'Linux / Unix', 'seaborn': 'Seaborn', 
+                        'microstrategy': 'MicroStrategy', 'spss': 'SPSS', 'visio': 'Visio', 'gdpr': 'GDPR', 'ssrs': 'SSRS', 
+                        'spreadsheet': 'Spreadsheet', 'aws': 'AWS', 'hadoop': 'Hadoop', 'ssis': 'SSIS', 'linux': 'Linux', 
+                        'sap': 'SAP', 'powerpoint': 'PowerPoint', 'sharepoint': 'SharePoint', 'redshift': 'Redshift', 
+                        'snowflake': 'Snowflake', 'qlik': 'Qlik', 'cognos': 'Cognos', 'pandas': 'Pandas', 'spark': 'Spark', 'outlook': 'Outlook',
+                        'sql' : 'SQL', 'python' : 'Python', 'r' : 'R', 'c':'C', 'c#':'C#', 'javascript' : 'JavaScript', 'js':'JS', 'java':'Java', 
+                        'scala':'Scala', 'sas' : 'SAS', 'matlab': 'MATLAB', 'c++' : 'C++', 'c/c++' : 'C / C++', 'perl' : 'Perl','go' : 'Go',
+                        'typescript' : 'TypeScript','bash':'Bash','html' : 'HTML','css' : 'CSS','php' : 'PHP','powershell' : 'Powershell',
+                        'rust' : 'Rust', 'kotlin' : 'Kotlin','ruby' : 'Ruby','dart' : 'Dart','assembly' :'Assembly',
+                        'swift' : 'Swift','vba' : 'VBA','lua' : 'Lua','groovy' : 'Groovy','delphi' : 'Delphi','objective-c' : 'Objective-C',
+                        'haskell' : 'Haskell','elixir' : 'Elixir','julia' : 'Julia','clojure': 'Clojure','solidity' : 'Solidity',
+                        'lisp' : 'Lisp','f#':'F#','fortran' : 'Fortran','erlang' : 'Erlang','apl' : 'APL','cobol' : 'COBOL',
+                        'ocaml': 'OCaml','crystal':'Crystal','javascript/typescript' : 'JavaScript / TypeScript','golang':'Golang',
+                        'nosql': 'NoSQL', 'mongodb' : 'MongoDB','t-sql' :'Transact-SQL', 'no-sql' : 'No-SQL','visual_basic' : 'Visual Basic',
+                        'pascal':'Pascal', 'mongo' : 'Mongo', 'pl/sql' : 'PL/SQL','sass' :'Sass', 'vb.net' : 'VB.NET','mssql' : 'MSSQL',
+                    }
 
-                # Extract skills from the resume
-                extracted_skills = [keywords_skills[skill] for skill in keywords_skills if re.search(skill, extracted_text, re.IGNORECASE)]
-                print(f"Extracted skills from resume: {extracted_skills}")
+                    # Extract skills from the resume
+                    extracted_skills = [keywords_skills[skill] for skill in keywords_skills if re.search(skill, extracted_text, re.IGNORECASE)]
+                    print(f"Extracted skills from resume: {extracted_skills}")
 
-                # Get skills from job posting
-                data_df['extracted_skills'] = data_df['skill_token'].apply(lambda skills_str: ast.literal_eval(skills_str))
+                    # Get skills from job posting
+                    data_df['extracted_skills'] = data_df['skill_token'].apply(lambda skills_str: ast.literal_eval(skills_str))
 
-                # Calculate and store the skill gap in a new column
-                # Convert extracted skills from the resume to a set
-                resume_skills_set = set(extracted_skills)
-                data_df['skill_gap'] = data_df['extracted_skills'].apply(lambda job_skills: list(set(job_skills) - resume_skills_set))
+                    # Calculate and store the skill gap in a new column
+                    # Convert extracted skills from the resume to a set
+                    resume_skills_set = set(extracted_skills)
+                    data_df['skill_gap'] = data_df['extracted_skills'].apply(lambda job_skills: list(set(job_skills) - resume_skills_set))
 
-                # TF-IDF and cosine similarity
-                vectorizer = TfidfVectorizer()
-                resume_skills_vector = vectorizer.fit_transform([' '.join(extracted_skills)])
+                    # TF-IDF and cosine similarity
+                    vectorizer = TfidfVectorizer()
+                    resume_skills_vector = vectorizer.fit_transform([' '.join(extracted_skills)])
 
-                match_scores = []
-                for _, row in data_df.iterrows():
-                    job_skills_vector = vectorizer.transform([' '.join(row['extracted_skills'])])
-                    similarity_score = cosine_similarity(resume_skills_vector, job_skills_vector)[0][0]
-                    match_scores.append(similarity_score)
+                    match_scores = []
+                    for _, row in data_df.iterrows():
+                        job_skills_vector = vectorizer.transform([' '.join(row['extracted_skills'])])
+                        similarity_score = cosine_similarity(resume_skills_vector, job_skills_vector)[0][0]
+                        match_scores.append(similarity_score)
 
-                print(f"Number of job postings: {len(data_df)}")
-                print(f"Match scores for first 10 postings: {match_scores[:10]}")
+                    print(f"Number of job postings: {len(data_df)}")
+                    print(f"Match scores for first 10 postings: {match_scores[:10]}")
 
-                data_df['match_scores'] = match_scores
-                sorted_postings = data_df.sort_values(by='match_scores', ascending=False)
-                ranked_postings = [(rank, row.to_dict()) for rank, (_, row) in enumerate(sorted_postings.iterrows(), start=1)]
+                    data_df['match_scores'] = match_scores
+                    sorted_postings = data_df.sort_values(by='match_scores', ascending=False)
+                    ranked_postings = [(rank, row.to_dict()) for rank, (_, row) in enumerate(sorted_postings.iterrows(), start=1)]
 
-                skill_gaps = [set(posting_skills) - set(extracted_skills) for posting_skills in data_df['extracted_skills']]
+                    skill_gaps = [set(posting_skills) - set(extracted_skills) for posting_skills in data_df['extracted_skills']]
 
-                # Store only the sorted indices in session
-                sorted_indices = data_df.sort_values(by='match_scores', ascending=False).index.tolist()
-                session['sorted_indices'] = sorted_indices
-                session['resume_extracted_skills'] = extracted_skills
+                    # Store only the sorted indices in session
+                    sorted_indices = data_df.sort_values(by='match_scores', ascending=False).index.tolist()
+                    session['sorted_indices'] = sorted_indices
+                    session['resume_extracted_skills'] = extracted_skills
 
-                items = ranked_postings[:per_page]
+                    items = ranked_postings[:per_page]
+
+                except Exception as e:
+                    print("Error reading file from S3:", str(e))
 
             return render_template('match.html', items=items, num_pages=num_pages, current_page=page, skills=extracted_skills)
         
@@ -287,7 +325,7 @@ def match():
 def set_cookie(response):
     if "session_id" in session:
         print(f"Type of session_id: {type(session['session_id'])}")
-        response.set_cookie(app.config["SESSION_COOKIE_NAME"], str(session["session_id"]).encode('utf-8'))
+        response.set_cookie(app.config["SESSION_COOKIE_NAME"], str(session["session_id"]))
     return response
 
 if __name__ == '__main__':
