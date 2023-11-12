@@ -100,7 +100,14 @@ def data():
 
 @app.route('/debug_session')
 def debug_session():
-    return jsonify(dict(session))
+    # return jsonify(dict(session))
+    # Add a route to check the session status
+    session_status = {
+        'session_id': session.sid,
+        'session_data': dict(session),
+    }
+    return jsonify(session_status)
+
 
 @app.route('/insight')
 def insight():
