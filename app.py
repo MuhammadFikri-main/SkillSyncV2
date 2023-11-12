@@ -160,11 +160,9 @@ def match():
                 s3.upload_fileobj(file, S3_BUCKET_NAME, file.filename)
                 print("File uploaded successfully to S3:", file.filename)
 
-                # Get just the filename 
-                filename = file.filename  
-
                 # Save filename in session
-                session['resume_filename'] = filename
+                session['resume_filename'] = file.filename
+                print("Filename in S3:", file.filename)
                 
                 # Store the S3 file URL in the session
                 s3_file_url = f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{file.filename}"
