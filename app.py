@@ -183,16 +183,7 @@ def match():
         if 'match_btn' in request.args:
             # Match button was clicked
             # Build file path
-
-            # Load session ID from cookie and decode
-            session_id = request.cookies.get(app.config["SESSION_COOKIE_NAME"])
-            if session_id:
-                session["session_id"] = session_id.decode("utf-8")
-
-            # Encode session ID before saving to session
-            if "session_id" in session:
-                session["session_id"] = str(session["session_id"]).encode("utf-8")
-
+            
             # Get filename from session 
             filename = session.get('resume_filename')
             s3.download_file(S3_BUCKET_NAME, filename, f"/tmp/{filename}")
