@@ -31,8 +31,8 @@ S3_REGION = 'Asia Pacific (Singapore) ap-southeast-1'
 s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 
 # Get the Heroku database URL
-db_url = os.getenv("JAWSDB_URL")
-#db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
+#db_url = os.getenv("JAWSDB_URL")
+db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
 
 # Print db_config for debugging
 print("db_url:", db_url)
@@ -88,8 +88,8 @@ app.config['SESSION_REFRESH_EACH_REQUEST'] = False
 app.config['SESSION_KEY_PREFIX'] = 'skillsyncv2'  # Replace with a unique prefix
 app.config['SESSION_REDIS'] = redis.StrictRedis.from_url('redis://default:qb1YLSxluzO5Y6RtPsx6INoN7RiRf6Oy@redis-19538.c267.us-east-1-4.ec2.cloud.redislabs.com:19538')
 app.config["SESSION_COOKIE_NAME"] = "session"
-# Expire sessions after 1 hour of inactivity
-app.config['SESSION_REDIS_EXPIRE_AFTER'] = 3600 
+# Expire sessions after 5 minutes of inactivity
+app.config['SESSION_REDIS_EXPIRE_AFTER'] = 300
 
 # Create Redis client
 redis_client = redis.StrictRedis.from_url('redis://default:qb1YLSxluzO5Y6RtPsx6INoN7RiRf6Oy@redis-19538.c267.us-east-1-4.ec2.cloud.redislabs.com:19538')
