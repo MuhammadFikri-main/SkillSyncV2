@@ -112,11 +112,12 @@ def data():
 @app.route('/debug_session')
 def debug_session():
     # return jsonify(dict(session))
-    # Add a route to check the session status
+    #Add a route to check the session status
     session_status = {
         'session_id': session.sid,
         'session_data': dict(session),
     }
+    print("Session Data:", session_status)
     return jsonify(session_status)
 
 
@@ -184,7 +185,6 @@ def match():
             
             # Get filename from session 
             filename = session.get('resume_filename')
-            print(filename)
             s3.download_file(S3_BUCKET_NAME, filename, f"/tmp/{filename}")
 
             if filename:
