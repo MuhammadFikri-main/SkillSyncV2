@@ -31,8 +31,8 @@ S3_REGION = 'Asia Pacific (Singapore) ap-southeast-1'
 s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 
 # Get the Heroku database URL
-# db_url = os.getenv("JAWSDB_URL")
-db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
+db_url = os.getenv("JAWSDB_URL")
+#db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
 
 # Print db_config for debugging
 print("db_url:", db_url)
@@ -81,11 +81,6 @@ data_df = get_job_postings_from_db()
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
-# Configure session to use the filesystem
-# app.config["SESSION_PERMANENT"] = False
-# app.config["SESSION_TYPE"] = "filesystem"
-# app.config["SESSION_FILE_DIR"] = "C:\\Users\\Fikri\\Downloads\\Version 4\\SkillSyncV2\\session"
-
 # Configure Flask app to use Redis for sessions
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
@@ -118,13 +113,6 @@ def data():
 @app.route('/debug_session')
 def debug_session():
     return jsonify(dict(session))
-    # Add a route to check the session status
-    # session_status = {
-    #     'session_id': session['_id'],
-    #     'session_data': dict(session),
-    # }
-    # print("Session Data:", session_status)
-    # return jsonify(session_status)
 
 @app.route('/test-redis')
 def test_redis():
