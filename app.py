@@ -184,6 +184,7 @@ def match():
             
             # Get filename from session 
             filename = session.get('resume_filename')
+            print(filename)
             s3.download_file(S3_BUCKET_NAME, filename, f"/tmp/{filename}")
 
             if filename:
@@ -256,6 +257,7 @@ def match():
                 items = ranked_postings[:per_page]
 
             return render_template('match.html', items=items, num_pages=num_pages, current_page=page, skills=extracted_skills)
+        
 
         else:
             # Normal GET request
