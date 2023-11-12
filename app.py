@@ -3,6 +3,8 @@ from flask import redirect, url_for
 import os
 import re
 import ast
+import boto3
+from botocore.exceptions import NoCredentialsError
 import secrets
 import PyPDF2
 import pandas as pd
@@ -18,6 +20,14 @@ from flask_session import Session
 from flask_kvsession import KVSessionExtension
 from flask_dropzone import Dropzone
 import redis
+
+# Configure AWS S3
+AWS_ACCESS_KEY = 'AKIAUG7BJ6UPZUFH6XVH'
+AWS_SECRET_KEY = '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'
+S3_BUCKET_NAME = 'skillsyncbucket'
+S3_REGION = 'Asia Pacific (Singapore) ap-southeast-1'
+
+s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 
 # Get the Heroku database URL
 db_url = os.getenv("JAWSDB_URL")
@@ -144,12 +154,26 @@ def match():
         # Save on upload
         file = request.files['file']
         if file and is_pdf(file.filename):
-            print("Uploaded file:", file.filename, flush=True)
-            # Save the PDF file or perform any other necessary actions
-            file.save(os.path.join(app.config['UPLOADED_PATH'], file.filename))
-            print("File saved successfully:", file.filename)
-            session['resume_filename'] = file.filename
-            return redirect(url_for('match'))
+            try:
+                # Upload the file to S3
+                s3.upload_fileobj(file, S3_BUCKET_NAME, file.filename)
+                print("File uploaded successfully to S3:", file.filename)
+                
+                # Store the S3 file URL in the session
+                s3_file_url = f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{file.filename}"
+                session['resume_s3_url'] = s3_file_url
+
+                return redirect(url_for('match'))
+            except NoCredentialsError:
+                return 'Credentials not available.'
+            except Exception as e:
+                return f'An error occurred: {str(e)}'
+            # print("Uploaded file:", file.filename, flush=True)
+            # # Save the PDF file or perform any other necessary actions
+            # file.save(os.path.join(app.config['UPLOADED_PATH'], file.filename))
+            # print("File saved successfully:", file.filename)
+            # session['resume_filename'] = file.filename
+            # return redirect(url_for('match'))
         else:
             return 'Invalid file format. Please upload a PDF file.'
 
