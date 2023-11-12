@@ -30,8 +30,8 @@ S3_REGION = 'Asia Pacific (Singapore) ap-southeast-1'
 s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 
 # Get the Heroku database URL
-db_url = os.getenv("JAWSDB_URL")
-# db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
+# db_url = os.getenv("JAWSDB_URL")
+db_url = 'mysql://ipozjqf4nynf5g8t:gz1okb91qs7xf8g3@bv2rebwf6zzsv341.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ydmso128kp8kj4zj'
 
 # Print db_config for debugging
 print("db_url:", db_url)
@@ -132,7 +132,6 @@ def is_pdf(filename):
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app.config.update(
-    # UPLOADED_PATH=os.path.join(basedir, 'resumes'),
     # Flask-Dropzone config:
     DROPZONE_MAX_FILE_SIZE=3,
     DROPZONE_MAX_FILES=30,
@@ -167,6 +166,7 @@ def match():
                 # Store the S3 file URL in the session
                 s3_file_url = f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{file.filename}"
                 session['resume_s3_url'] = s3_file_url
+                print("Filename URL in S3:", session.get('resume_s3_url'))
 
                 return redirect(url_for('match'))
             
@@ -287,7 +287,7 @@ def match():
 def set_cookie(response):
     if "session_id" in session:
         print(f"Type of session_id: {type(session['session_id'])}")
-        response.set_cookie(app.config["SESSION_COOKIE_NAME"], str(session["session_id"]))
+        response.set_cookie(app.config["SESSION_COOKIE_NAME"], str(session["session_id"]).encode('utf-8'))
     return response
 
 if __name__ == '__main__':
