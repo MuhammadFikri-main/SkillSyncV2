@@ -283,11 +283,10 @@ def match():
 
 @app.after_request
 def set_cookie(response):
-    if "session_id" in session: 
-        session_id = str(session["session_id"]).encode("utf-8").decode("utf-8")
-        response.set_cookie(app.config["SESSION_COOKIE_NAME"], session_id)
+    if "session_id" in session:
+        print(f"Type of session_id: {type(session['session_id'])}")
+        response.set_cookie(app.config["SESSION_COOKIE_NAME"], str(session["session_id"]))
     return response
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
